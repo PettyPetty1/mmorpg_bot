@@ -1,0 +1,36 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Explicitly set line endings for common file types
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Windows batch files use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Treat these as binary (no diff, no line ending conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.avi binary
+*.mov binary
+*.wav binary
+*.mp3 binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.pkl binary
+*.pt binary
+*.h5 binary
