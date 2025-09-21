@@ -1,0 +1,62 @@
+# --- Python / venv / build ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.build/
+dist/
+build/
+.venv/
+.env
+.env.* 
+*.env
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Data / Artifacts (keep the repo lean) ---
+dataset/
+data/
+recordings/
+outputs/
+logs/
+checkpoints/
+wandb/
+tensorboard/
+*.log
+
+# --- Unreal / Dev-kit blobs (store elsewhere or LFS) ---
+*.uasset
+*.umap
+*.uexp
+*.ubulk
+ConanSandbox/
+ConanDevKit/
+FModelExports/
+UModelExports/
+
+# --- Media / Binaries (prefer LFS) ---
+*.mp4
+*.mov
+*.avi
+*.wav
+*.flac
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.webp
+*.zip
+*.7z
+*.rar
+*.exe
+*.dll
+
+# --- Misc runtime ---
+tmp/
+temp/
+.cache/
