@@ -28,6 +28,7 @@ checkpoints/
 wandb/
 tensorboard/
 *.log
+# Generated
 
 # --- Unreal / Dev-kit blobs (store elsewhere or LFS) ---
 *.uasset
@@ -60,3 +61,9 @@ UModelExports/
 tmp/
 temp/
 .cache/
+# Generated
+out/
+data/
+outputs/
+logs/
+

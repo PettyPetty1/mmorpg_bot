@@ -256,6 +256,34 @@ def get_paths(force_refresh: bool = False) -> Paths:
     return _paths_singleton
 
 
+# ---------- Additive session helpers ----------
+
+def session_events_path(name: str) -> Path:
+    """
+    Canonical events.jsonl path inside a session.
+    """
+    p = get_paths()
+    return p.session_dir(name) / "events.jsonl"
+
+
+def session_frames_dir(name: str) -> Path:
+    """
+    Frames directory inside a session.
+    """
+    p = get_paths()
+    return p.session_dir(name) / "frames"
+
+
+def ensure_session_io(name: str) -> None:
+    """
+    Create standard per-session directories (e.g., frames/) if they don't exist.
+    Safe to call multiple times.
+    """
+    p = get_paths()
+    p.session_dir(name).mkdir(parents=True, exist_ok=True)
+    session_frames_dir(name).mkdir(parents=True, exist_ok=True)
+
+
 # ---------- CLI sanity check ----------
 
 if __name__ == "__main__":
