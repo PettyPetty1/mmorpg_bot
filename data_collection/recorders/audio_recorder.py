@@ -29,7 +29,7 @@ import numpy as np
 
 import sounddevice as sd
 
-from core.events import Event
+from core.events import Event,event_dump
 from ..event_writer import JsonlWriter, ensure_dir
 
 # Type alias for user supplied device identifiers
@@ -132,8 +132,8 @@ class AudioRecorder:
             sd.check_input_settings(
                 device=device_index,
                 samplerate=self._samplerate,
-                channels=self._channels,+
-            dtype=self._dtype,
+                channels=self._channels,
+                dtype=self._dtype,
                 extra_settings=extra,
             )
 
@@ -323,7 +323,7 @@ class AudioRecorder:
             event_payload["status"] = status_messages
 
         event = Event(kind="audio", session=self.session, data=event_payload)
-        self.events_writer.write(event.dict())
+        self.events_writer.write(event_dump(event))
 
         self._seq += 1
 
@@ -342,7 +342,7 @@ class AudioRecorder:
             }
         }
         event = Event(kind="meta", session=self.session, data=meta)
-        self.events_writer.write(event.dict())
+        self.events_writer.write(event_dump(event))
 
     # Convenience for tests / callers ----------------------------------
     @staticmethod
