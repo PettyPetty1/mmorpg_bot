@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 import time
 import threading
+import sys
 
 # Capture backends
 try:
@@ -16,41 +17,56 @@ from PIL import Image
 import numpy as np
 
 # Hotkeys / window handle
-from pynput import keyboard
-import ctypes
-from ctypes import wintypes
+try:
+    from pynput import keyboard  # type: ignore
+except Exception:  # pragma: no cover - optional dependency / platform specific
+    keyboard = None  # type: ignore
+
+_WINDOWS = sys.platform.startswith("win")
+
+if _WINDOWS:
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+
+    class POINT(ctypes.Structure):
+        _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
+
+    def _get_cursor_pos() -> Tuple[int, int]:
+        pt = POINT()
+        if not user32.GetCursorPos(ctypes.byref(pt)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return pt.x, pt.y
+
+    def _window_from_point(x: int, y: int) -> int:
+        hwnd = user32.WindowFromPoint(POINT(x, y))
+        return hwnd
+
+    def _get_client_rect_on_screen(hwnd: int) -> Tuple[int, int, int, int]:
+        # client rect (0,0)-(w,h) in client coords
+        rect = wintypes.RECT()
+        user32.GetClientRect(hwnd, ctypes.byref(rect))
+        # Map client (0,0) to screen
+        pt = POINT(0, 0)
+        user32.ClientToScreen(hwnd, ctypes.byref(pt))
+        left, top = pt.x, pt.y
+        right, bottom = left + rect.right, top + rect.bottom
+        return left, top, right, bottom
+else:
+    user32 = None  # type: ignore
+
+    def _get_cursor_pos() -> Tuple[int, int]:
+        raise RuntimeError("Window locking hotkey is only available on Windows")
+
+    def _window_from_point(x: int, y: int) -> int:
+        raise RuntimeError("Window locking hotkey is only available on Windows")
+
+    def _get_client_rect_on_screen(hwnd: int) -> Tuple[int, int, int, int]:
+        raise RuntimeError("Window locking hotkey is only available on Windows")
 
 from core.events import Event
 from ..event_writer import JsonlWriter, ensure_dir
-
-
-# --------- Win32 helpers (window → screen region) ----------
-
-user32 = ctypes.WinDLL("user32", use_last_error=True)
-
-class POINT(ctypes.Structure):
-    _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
-
-def _get_cursor_pos() -> Tuple[int, int]:
-    pt = POINT()
-    if not user32.GetCursorPos(ctypes.byref(pt)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    return pt.x, pt.y
-
-def _window_from_point(x: int, y: int) -> int:
-    hwnd = user32.WindowFromPoint(POINT(x, y))
-    return hwnd
-
-def _get_client_rect_on_screen(hwnd: int) -> Tuple[int, int, int, int]:
-    # client rect (0,0)-(w,h) in client coords
-    rect = wintypes.RECT()
-    user32.GetClientRect(hwnd, ctypes.byref(rect))
-    # Map client (0,0) to screen
-    pt = POINT(0, 0)
-    user32.ClientToScreen(hwnd, ctypes.byref(pt))
-    left, top = pt.x, pt.y
-    right, bottom = left + rect.right, top + rect.bottom
-    return left, top, right, bottom
 
 
 class ScreenRecorder:
@@ -92,8 +108,10 @@ class ScreenRecorder:
             self._cam = mss()
 
         # Hotkey listener for window lock (F9)
-        self._kb_listener = keyboard.Listener(on_press=self._on_key_press)
-        self._kb_listener.start()
+        self._kb_listener = None
+        if _WINDOWS and keyboard is not None:
+            self._kb_listener = keyboard.Listener(on_press=self._on_key_press)
+            self._kb_listener.start()
 
         # Announce initial region
         self._emit_meta_region()
@@ -101,6 +119,8 @@ class ScreenRecorder:
     # ------------- Hotkey handling ------------------
 
     def _on_key_press(self, key):
+        if not (_WINDOWS and keyboard is not None):
+            return
         try:
             if key == keyboard.Key.f9:
                 # Lock region to the window under the cursor
@@ -208,7 +228,8 @@ class ScreenRecorder:
                 self._cam.stop()
             except Exception:
                 pass
-        try:
-            self._kb_listener.stop()
-        except Exception:
-            pass
+        if self._kb_listener is not None:
+            try:
+                self._kb_listener.stop()
+            except Exception:
+                pass
